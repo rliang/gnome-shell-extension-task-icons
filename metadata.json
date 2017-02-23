@@ -1,0 +1,11 @@
+{
+  "name": "Task Icons",
+  "description": "Add task icons grouped by workspace to the panel",
+  "uuid": "taskicons@rliang.github.com",
+  "shell-version": [
+    "3.16",
+    "3.18",
+    "3.20",
+    "3.22"
+  ]
+}
