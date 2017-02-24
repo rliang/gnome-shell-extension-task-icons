@@ -14,31 +14,31 @@ function _build() {
   for (let i = 0; i < global.screen.n_workspaces; i++)
     wss.push(global.screen.get_workspace_by_index(i));
   wss.map(ws => [
-    ws.index(),
-    ws.list_windows()
-      .map(win => Shell.WindowTracker.get_default().get_window_app(win))
-      .filter(app => app != null)
-      .map(app => new St.Bin({
-        style_class: 'taskicons-icon',
-        child: app.create_icon_texture(16),
-      })),
-  ]).filter(([i, icons]) => icons.length > 0)
-    .forEach(([i, icons], j, all) => {
+      ws,
+      ws.list_windows()
+        .map(win => Shell.WindowTracker.get_default().get_window_app(win))
+        .filter(app => app != null)
+        .map(app => new St.Bin({
+          style_class: 'taskicons-icon',
+          child: app.create_icon_texture(16),
+        })),
+    ]).filter(([ws, icons]) => icons.length > 0)
+    .forEach(([ws, icons], j, all) => {
       let wsbox = new St.BoxLayout({
         style_class: 'panel-button',
         reactive: true,
         can_focus: true,
         track_hover: true,
       });
-      wsbox.connect('button-press-event', () =>
-        ws.activate(global.get_current_time()));
       if (all.length > 1)
         wsbox.add(new St.Label({
           style_class: 'taskicons-label',
-          text: (i + 1).toString(),
+          text: (ws.index() + 1).toString(),
           y_align: Clutter.ActorAlign.CENTER,
         }));
       icons.forEach(ic => wsbox.add(ic));
+      wsbox.connect('button-press-event', () =>
+        ws.activate(global.get_current_time()));
       _box.add(wsbox);
     });
 }
