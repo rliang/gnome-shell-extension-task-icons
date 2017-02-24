@@ -4,7 +4,7 @@ const Shell = imports.gi.Shell;
 const Main = imports.ui.main;
 const Mainloop = imports.mainloop;
 
-let _box, _handles = [];
+let _box, _handles;
 
 function _build() {
   _box.destroy_all_children();
@@ -50,18 +50,11 @@ function enable() {
   let appmenuindex = appmenubox.get_children().indexOf(appmenu);
   appmenubox.insert_child_at_index(_box, appmenuindex + 1);
   _build();
-  _handles.push([
-    global.screen,
-    global.screen.connect('workspace-switched', () => Mainloop.idle_add(_build)),
-  ]);
-  _handles.push([
-    global.display,
-    global.display.connect('notify::focus-window', () => Mainloop.idle_add(_build)),
-  ]);
+  _handles = ['map', 'destroy', 'switch-workspace']
+    .map(s => global.window_manager.connect(s, () => Mainloop.idle_add(_build)));
 }
 
 function disable() {
-  _handles.forEach(([obj, handle]) => obj.disconnect(handle));
-  _handles = [];
+  _handles.forEach(h => global.window_manager.disconnect(h));
   _box.destroy();
 }
