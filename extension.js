@@ -30,7 +30,7 @@ function _build() {
         can_focus: true,
         track_hover: true,
       });
-      if (all.length > 1)
+      if (all.length > 1 || ws != global.screen.get_active_workspace())
         wsbox.add(new St.Label({
           style_class: 'taskicons-label',
           text: (ws.index() + 1).toString(),
