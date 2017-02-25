@@ -8,7 +8,7 @@ let _box, _handles;
 
 function _build() {
   _box.destroy_all_children();
-  if (global.get_window_actors().length < 2)
+  if (global.get_window_actors().length < 3)
     return;
   let wss = [];
   for (let i = 0; i < global.screen.n_workspaces; i++)
