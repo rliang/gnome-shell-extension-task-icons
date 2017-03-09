@@ -1,3 +1,4 @@
+const Meta = imports.gi.Meta;
 const Clutter = imports.gi.Clutter;
 const St = imports.gi.St;
 const Shell = imports.gi.Shell;
@@ -32,7 +33,7 @@ function createBox(wsIndex, icons, wsListLength) {
   });
   box.connect('button-press-event', () =>
     global.screen.get_workspace_by_index(wsIndex)
-    .activate(global.get_current_time()));
+      .activate(global.get_current_time()));
   if (wsListLength > 1 || wsIndex != global.screen.get_active_workspace_index())
     box.add(new St.Label({
       style_class: 'taskicons-label',
@@ -45,8 +46,14 @@ function createBox(wsIndex, icons, wsListLength) {
 
 function rebuild() {
   _iconsBox.destroy_all_children();
-  if (global.get_window_actors().length > 2)
-    getWorkspaces().map(ws => [ws, getAppIcons(ws)])
+  let all = global.get_window_actors()
+    .map(a => a.meta_window)
+    .filter(w => w.window_type === Meta.WindowType.NORMAL);
+  if (all.length < 1)
+    return;
+  if (all.length === 1 && all[0].get_workspace() == global.screen.get_active_workspace())
+    return;
+  getWorkspaces().map(ws => [ws, getAppIcons(ws)])
     .filter(([ws, icons]) => icons.length > 0)
     .forEach(([ws, icons], i, wsList) =>
       _iconsBox.add(createBox(ws.index(), icons, wsList.length)));
