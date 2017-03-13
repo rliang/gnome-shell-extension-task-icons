@@ -25,8 +25,11 @@ function getAppIcons(ws) {
 }
 
 function createBox(wsIndex, icons, wsListLength) {
+  let active = wsIndex === global.screen.get_active_workspace_index();
+  let multiple = wsListLength > 1;
   let box = new St.BoxLayout({
     style_class: 'panel-button',
+    pseudo_class: multiple && active ? 'active' : null,
     reactive: true,
     can_focus: true,
     track_hover: true,
@@ -34,7 +37,7 @@ function createBox(wsIndex, icons, wsListLength) {
   box.connect('button-press-event', () =>
     global.screen.get_workspace_by_index(wsIndex)
       .activate(global.get_current_time()));
-  if (wsListLength > 1 || wsIndex != global.screen.get_active_workspace_index())
+  if (multiple || !active)
     box.add(new St.Label({
       style_class: 'taskicons-label',
       text: (wsIndex + 1).toString(),
