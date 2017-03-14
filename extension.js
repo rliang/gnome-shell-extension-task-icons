@@ -9,16 +9,19 @@ const Me = ExtensionUtils.getCurrentExtension();
 
 let _iconsBox;
 
-function connect(object, signal, cb) {
-  if (!object['__' + Me.uuid])
-    object['__' + Me.uuid] = [];
-  object['__' + Me.uuid].push(object.connect(signal, cb));
+function extProperty(object, key, def) {
+  key = '__' + Me.uuid + '_' + key;
+  if (!object[key])
+    object[key] = def();
+  return object[key];
 }
 
-function disconnect(object) {
-  if (object['__' + Me.uuid])
-    object['__' + Me.uuid].forEach(h => object.disconnect(h));
-  delete object['__' + Me.uuid];
+function extConnect(object, signal, cb) {
+  extProperty(object, 'handles', () => []).push(object.connect(signal, cb));
+}
+
+function extDisconnect(object) {
+  extProperty(object, 'handles', () => []).forEach(h => object.disconnect(h));
 }
 
 function getWorkspaces() {
@@ -83,12 +86,13 @@ function enable() {
   let appMenuIndex = appMenuBox.get_children().indexOf(appMenu);
   appMenuBox.insert_child_at_index(_iconsBox, appMenuIndex + 1);
   rebuild();
-  connect(global.screen, 'restacked', rebuild);
-  connect(global.window_manager, 'switch-workspace', rebuild);
+  extConnect(global.screen, 'restacked', rebuild);
+  extConnect(global.window_manager, 'switch-workspace', rebuild);
 }
 
 function disable() {
-  disconnect(global.screen);
-  disconnect(global.window_manager);
+  extDisconnect(global.screen);
+  extDisconnect(global.window_manager);
+  _iconsBox.remove_all_children();
   _iconsBox.destroy();
 }
