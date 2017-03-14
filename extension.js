@@ -31,52 +31,75 @@ function getWorkspaces() {
   return wsList;
 }
 
-function getAppIcons(ws) {
-  return ws.list_windows()
-    .map(win => Shell.WindowTracker.get_default().get_window_app(win))
-    .filter(app => app != null)
-    .map(app => new St.Bin({
-      style_class: 'taskicons-icon',
-      child: app.create_icon_texture(16),
-    }));
+function windowIcon(win) {
+  return extProperty(win, 'icon', () => new St.Bin({
+    style_class: 'taskicons-icon',
+    child: Shell.WindowTracker.get_default().get_window_app(win)
+      .create_icon_texture(16),
+  }));
 }
 
-function createBox(wsIndex, icons, wsListLength) {
-  let active = wsIndex === global.screen.get_active_workspace_index();
-  let multiple = wsListLength > 1;
-  let box = new St.BoxLayout({
-    style_class: 'panel-button',
-    pseudo_class: multiple && active ? 'active' : null,
-    reactive: true,
-    can_focus: true,
-    track_hover: true,
+function workspaceBox(ws) {
+  let box = extProperty(ws, 'box', () => {
+    let box = new St.BoxLayout({
+      style_class: 'panel-button',
+      reactive: true,
+      can_focus: true,
+      track_hover: true,
+    });
+    box.connect('button-press-event', () =>
+      ws.activate(global.get_current_time()));
+    return box;
   });
-  box.connect('button-press-event', () =>
-    global.screen.get_workspace_by_index(wsIndex)
-      .activate(global.get_current_time()));
-  if (multiple || !active)
-    box.add(new St.Label({
-      style_class: 'taskicons-label',
-      text: (wsIndex + 1).toString(),
-      y_align: Clutter.ActorAlign.CENTER,
-    }));
-  icons.forEach(i => box.add(i));
   return box;
 }
 
-function rebuild() {
-  _iconsBox.destroy_all_children();
-  let all = global.get_window_actors()
+function workspaceLabel(ws) {
+  let label = extProperty(ws, 'label', () => new St.Label({
+    style_class: 'taskicons-label',
+    y_align: Clutter.ActorAlign.CENTER,
+  }));
+  return label;
+}
+
+function checkBuild() {
+  let wins = global.get_window_actors()
     .map(a => a.meta_window)
     .filter(w => w.window_type === Meta.WindowType.NORMAL);
-  if (all.length < 1)
+  if (wins.length < 1)
+    return false;
+  if (wins.length === 1 && all[0].get_workspace() == global.screen.get_active_workspace())
+    return false;
+  return true;
+}
+
+function rebuild() {
+  _iconsBox.remove_all_children();
+  if (!checkBuild())
     return;
-  if (all.length === 1 && all[0].get_workspace() == global.screen.get_active_workspace())
-    return;
-  getWorkspaces().map(ws => [ws, getAppIcons(ws)])
+  getWorkspaces()
+    .map(ws => [
+      ws,
+      ws.list_windows().map(windowIcon).filter(icon => icon !== null)
+    ])
     .filter(([ws, icons]) => icons.length > 0)
-    .forEach(([ws, icons], i, wsList) =>
-      _iconsBox.add(createBox(ws.index(), icons, wsList.length)));
+    .forEach(([ws, icons], _, all) => {
+      let isActive = ws.index() === global.screen.get_active_workspace_index();
+      let isSingle = all.length === 1;
+      let box = workspaceBox(ws);
+      box.remove_all_children();
+      box.pseudo_class = null;
+      if (!isSingle || !isActive) {
+        let label = workspaceLabel(ws);
+        label.set_text((ws.index() + 1).toString());
+        label.reparent(box);
+      }
+      if (!isSingle && isActive) {
+        box.pseudo_class = 'active';
+      }
+      icons.forEach(icon => icon.reparent(box));
+      box.reparent(_iconsBox);
+    });
 }
 
 function enable() {
