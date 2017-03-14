@@ -4,8 +4,22 @@ const St = imports.gi.St;
 const Shell = imports.gi.Shell;
 const Main = imports.ui.main;
 const Mainloop = imports.mainloop;
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
 
-let _iconsBox, _handles;
+let _iconsBox;
+
+function connect(object, signal, cb) {
+  if (!object['__' + Me.uuid])
+    object['__' + Me.uuid] = [];
+  object['__' + Me.uuid].push(object.connect(signal, cb));
+}
+
+function disconnect(object) {
+  if (object['__' + Me.uuid])
+    object['__' + Me.uuid].forEach(h => object.disconnect(h));
+  delete object['__' + Me.uuid];
+}
 
 function getWorkspaces() {
   let wsList = [];
@@ -69,11 +83,12 @@ function enable() {
   let appMenuIndex = appMenuBox.get_children().indexOf(appMenu);
   appMenuBox.insert_child_at_index(_iconsBox, appMenuIndex + 1);
   rebuild();
-  _handles = ['map', 'destroy', 'switch-workspace']
-    .map(s => global.window_manager.connect(s, () => Mainloop.idle_add(rebuild)));
+  connect(global.screen, 'restacked', rebuild);
+  connect(global.window_manager, 'switch-workspace', rebuild);
 }
 
 function disable() {
-  _handles.forEach(h => global.window_manager.disconnect(h));
+  disconnect(global.screen);
+  disconnect(global.window_manager);
   _iconsBox.destroy();
 }
