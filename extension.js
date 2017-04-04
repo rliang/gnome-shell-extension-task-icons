@@ -1,5 +1,6 @@
 const Meta = imports.gi.Meta;
 const Clutter = imports.gi.Clutter;
+const Gio = imports.gi.Gio;
 const St = imports.gi.St;
 const Shell = imports.gi.Shell;
 const Main = imports.ui.main;
@@ -7,7 +8,7 @@ const Mainloop = imports.mainloop;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 
-let _iconsBox;
+let _settings, _iconsBox;
 
 function extProperty(object, key, def) {
   key = '__' + Me.uuid + '_' + key;
@@ -68,7 +69,7 @@ function checkBuild() {
     .filter(w => w.window_type === Meta.WindowType.NORMAL);
   if (wins.length < 1)
     return false;
-  if (wins.length === 1 && all[0].get_workspace() == global.screen.get_active_workspace())
+  if (wins.length === 1 && wins[0].get_workspace() == global.screen.get_active_workspace())
     return false;
   return true;
 }
@@ -102,20 +103,40 @@ function rebuild() {
     });
 }
 
+function init() {
+  let schema = Me.metadata['settings-schema'];
+  let source = Gio.SettingsSchemaSource.new_from_directory(Me.dir.get_path(),
+    Gio.SettingsSchemaSource.get_default(), false)
+  _settings = new Gio.Settings({
+    settings_schema: source.lookup(schema, true),
+  });
+}
+
 function enable() {
   _iconsBox = new St.BoxLayout({ style_class: 'taskicons-box' });
-  let appMenu = Main.panel.statusArea.appMenu.actor.get_parent();
-  let appMenuBox = appMenu.get_parent();
-  let appMenuIndex = appMenuBox.get_children().indexOf(appMenu);
-  appMenuBox.insert_child_at_index(_iconsBox, appMenuIndex + 1);
+  if (_settings.get_boolean('icons-on-right')) {
+    Main.panel._rightBox.insert_child_at_index(_iconsBox, 0);
+  } else {
+    let appMenu = Main.panel.statusArea.appMenu.actor.get_parent();
+    let appMenuBox = appMenu.get_parent();
+    let appMenuIndex = appMenuBox.get_children().indexOf(appMenu);
+    appMenuBox.insert_child_at_index(_iconsBox, appMenuIndex + 1);
+  }
   rebuild();
   extConnect(global.screen, 'restacked', rebuild);
   extConnect(global.window_manager, 'switch-workspace', rebuild);
+  extConnect(_settings, 'changed', reenable);
 }
 
 function disable() {
   extDisconnect(global.screen);
   extDisconnect(global.window_manager);
+  extDisconnect(_settings);
   _iconsBox.remove_all_children();
   _iconsBox.destroy();
+}
+
+function reenable() {
+  disable();
+  enable();
 }

@@ -1,0 +1,9 @@
+<schemalist>
+  <schema id="org.gnome.shell.extensions.taskicons" path="/org/gnome/shell/extensions/taskicons/">
+    <key name="icons-on-right" type="b">
+      <default>false</default>
+      <summary>Icons on right</summary>
+      <description>Whether to place the icons on the right side of the panel instead of the left.</description>
+    </key>
+  </schema>
+</schemalist>
