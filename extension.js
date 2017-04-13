@@ -41,7 +41,7 @@ function windowIcon(win) {
 }
 
 function workspaceBox(ws) {
-  let box = extProperty(ws, 'box', () => {
+  return extProperty(ws, 'box', () => {
     let box = new St.BoxLayout({
       style_class: 'panel-button',
       reactive: true,
@@ -52,15 +52,17 @@ function workspaceBox(ws) {
       ws.activate(global.get_current_time()));
     return box;
   });
-  return box;
 }
 
 function workspaceLabel(ws) {
-  let label = extProperty(ws, 'label', () => new St.Label({
+  return extProperty(ws, 'label', () => new St.Label({
     style_class: 'taskicons-label',
     y_align: Clutter.ActorAlign.CENTER,
   }));
-  return label;
+}
+
+function workspaceIcons(ws) {
+  return ws.list_windows().map(windowIcon).filter(icon => icon !== null)
 }
 
 function checkBuild() {
@@ -79,25 +81,21 @@ function rebuild() {
   if (!checkBuild())
     return;
   getWorkspaces()
-    .map(ws => [
-      ws,
-      ws.list_windows().map(windowIcon).filter(icon => icon !== null)
-    ])
+    .map(ws => [ws, workspaceIcons(ws)])
     .filter(([ws, icons]) => icons.length > 0)
     .forEach(([ws, icons], _, all) => {
       let isActive = ws.index() === global.screen.get_active_workspace_index();
       let isSingle = all.length === 1;
       let box = workspaceBox(ws);
       box.remove_all_children();
-      box.pseudo_class = null;
-      if (!isSingle || !isActive) {
+      if (_settings.get_boolean('show-workspace-numbers') && (!isSingle || !isActive)) {
         let label = workspaceLabel(ws);
         label.set_text((ws.index() + 1).toString());
         label.reparent(box);
       }
-      if (!isSingle && isActive) {
+      box.pseudo_class = null;
+      if (_settings.get_boolean('highlight-current-workspace') && (!isSingle && isActive))
         box.pseudo_class = 'active';
-      }
       icons.forEach(icon => icon.reparent(box));
       box.reparent(_iconsBox);
     });

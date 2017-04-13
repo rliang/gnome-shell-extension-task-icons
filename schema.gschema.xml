@@ -1,5 +1,15 @@
 <schemalist>
   <schema id="org.gnome.shell.extensions.taskicons" path="/org/gnome/shell/extensions/taskicons/">
+    <key name="show-workspace-numbers" type="b">
+      <default>true</default>
+      <summary>Show Workspace Numbers</summary>
+      <description>Whether to display workspace numbers.</description>
+    </key>
+    <key name="highlight-current-workspace" type="b">
+      <default>true</default>
+      <summary>Highlight Current Workspace</summary>
+      <description>Whether to display the current workspace's icon box as a focused panel button.</description>
+    </key>
     <key name="icons-on-right" type="b">
       <default>false</default>
       <summary>Icons on right</summary>
