@@ -65,6 +65,24 @@ function workspaceIcons(ws) {
   return ws.list_windows().map(windowIcon).filter(icon => icon !== null)
 }
 
+function setupBox(ws, icons, all) {
+  let isActive = ws.index() === global.screen.get_active_workspace_index();
+  let isSingle = all.length === 1;
+  let box = workspaceBox(ws);
+  box.remove_all_children();
+  if (_settings.get_boolean('show-workspace-numbers') && (!isSingle || !isActive)) {
+    let label = workspaceLabel(ws);
+    label.set_text((ws.index() + 1).toString());
+    label.reparent(box);
+  }
+  box.pseudo_class = null;
+  if (_settings.get_boolean('highlight-current-workspace') && (!isSingle && isActive))
+    box.pseudo_class = 'active';
+  icons.forEach(icon => icon.reparent(box));
+  box.set_opacity(isActive ? 255 : 128);
+  return box;
+}
+
 function checkBuild() {
   let wins = global.get_window_actors()
     .map(a => a.meta_window)
@@ -83,22 +101,7 @@ function rebuild() {
   getWorkspaces()
     .map(ws => [ws, workspaceIcons(ws)])
     .filter(([ws, icons]) => icons.length > 0)
-    .forEach(([ws, icons], _, all) => {
-      let isActive = ws.index() === global.screen.get_active_workspace_index();
-      let isSingle = all.length === 1;
-      let box = workspaceBox(ws);
-      box.remove_all_children();
-      if (_settings.get_boolean('show-workspace-numbers') && (!isSingle || !isActive)) {
-        let label = workspaceLabel(ws);
-        label.set_text((ws.index() + 1).toString());
-        label.reparent(box);
-      }
-      box.pseudo_class = null;
-      if (_settings.get_boolean('highlight-current-workspace') && (!isSingle && isActive))
-        box.pseudo_class = 'active';
-      icons.forEach(icon => icon.reparent(box));
-      box.reparent(_iconsBox);
-    });
+    .forEach(([ws, icons], _, all) => setupBox(ws, icons, all).reparent(_iconsBox));
 }
 
 function init() {
