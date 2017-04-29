@@ -15,5 +15,11 @@
       <summary>Icons on right</summary>
       <description>Whether to place the icons on the right side of the panel instead of the left.</description>
     </key>
+    <key name="inactive-workspace-opacity" type="d">
+      <range min="0" max="255"/>
+      <default>255</default>
+      <summary>Inactive Workspace Opacity</summary>
+      <description>The opacity level of inactive workspace icon boxes.</description>
+    </key>
   </schema>
 </schemalist>

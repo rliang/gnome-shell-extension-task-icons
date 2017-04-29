@@ -79,7 +79,7 @@ function setupBox(ws, icons, all) {
   if (_settings.get_boolean('highlight-current-workspace') && (!isSingle && isActive))
     box.pseudo_class = 'active';
   icons.forEach(icon => icon.reparent(box));
-  box.set_opacity(isActive ? 255 : 128);
+  box.set_opacity(isActive ? 255 : _settings.get_double('inactive-workspace-opacity'));
   return box;
 }
 
