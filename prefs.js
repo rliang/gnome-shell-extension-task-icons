@@ -45,6 +45,7 @@ function buildPrefsWidget() {
   widget.add(switchWidget('show-workspace-numbers', 'Show Workspace Numbers'));
   widget.add(switchWidget('highlight-current-workspace', 'Highlight Current Workspace'));
   widget.add(switchWidget('icons-on-right', 'Icons On Right'));
+  widget.add(switchWidget('icons-before-app-menu', 'Icons Before App Menu'));
   widget.add(spinWidget('inactive-workspace-opacity', 'Inactive Workspace Opacity', 0, 255, 1));
   widget.show_all();
   return widget;

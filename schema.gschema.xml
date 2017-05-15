@@ -15,6 +15,11 @@
       <summary>Icons on right</summary>
       <description>Whether to place the icons on the right side of the panel instead of the left.</description>
     </key>
+    <key name="icons-before-app-menu" type="b">
+      <default>false</default>
+      <summary>Icons Before App Menu</summary>
+      <description>Whether to place the icons before the app menu instead of after.</description>
+    </key>
     <key name="inactive-workspace-opacity" type="d">
       <range min="0" max="255"/>
       <default>255</default>

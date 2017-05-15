@@ -121,7 +121,9 @@ function enable() {
     let appMenu = Main.panel.statusArea.appMenu.actor.get_parent();
     let appMenuBox = appMenu.get_parent();
     let appMenuIndex = appMenuBox.get_children().indexOf(appMenu);
-    appMenuBox.insert_child_at_index(_iconsBox, appMenuIndex + 1);
+    if (!_settings.get_boolean('icons-before-app-menu'))
+      appMenuIndex += 1;
+    appMenuBox.insert_child_at_index(_iconsBox, appMenuIndex);
   }
   rebuild();
   extConnect(global.screen, 'restacked', rebuild);
