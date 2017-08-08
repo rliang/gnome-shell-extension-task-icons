@@ -18,7 +18,9 @@ Default
 ![](screenshot-3.png)
 
 `workspaces-before-active-position=1`
+
 `workspaces-after-active-position=2`
+
 `active-workspace-position=nothing`
 
 ![](screenshot-4.png)
@@ -28,7 +30,7 @@ Default
 
 ### From GNOME Shell Extensions
 
-Install from [here](https://extensions.gnome.org), or use the command `gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell --method org.gnome.Shell.Extensions.InstallRemoteExtension "'taskicons@rliang.github.com'"`
+Install from [here](https://extensions.gnome.org/extension/1175/task-icons/), or use the command `gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell --method org.gnome.Shell.Extensions.InstallRemoteExtension "'taskicons@rliang.github.com'"`
 
 ### From source
 
