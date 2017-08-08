@@ -1,52 +1,46 @@
-const Gio = imports.gi.Gio;
-const Gtk = imports.gi.Gtk;
+const GLib           = imports.gi.GLib;
+const Gio            = imports.gi.Gio;
+const Gtk            = imports.gi.Gtk;
 const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
 
-let _settings;
-
-function init() {
-  let schema = Me.metadata['settings-schema'];
-  let source = Gio.SettingsSchemaSource.new_from_directory(Me.dir.get_path(),
-    Gio.SettingsSchemaSource.get_default(), false)
-  _settings = new Gio.Settings({
-    settings_schema: source.lookup(schema, true),
-  });
-}
-
-function boxWidget(key, name) {
-  let box = new Gtk.Box({orientation: Gtk.Orientation.HORIZONTAL});
-  box.pack_start(new Gtk.Label({
-    label: name,
-    halign: Gtk.Align.START,
-    hexpand: true,
-  }), true, true, 6);
-  return box;
-}
-
-function switchWidget(key, name) {
-  let box = boxWidget(key, name);
-  let widget = new Gtk.Switch();
-  _settings.bind(key, widget, 'state', Gio.SettingsBindFlags.DEFAULT);
-  box.pack_end(widget, false, false, 6);
-  return box;
-}
-
-function spinWidget(key, name, min, max, step) {
-  let box = boxWidget(key, name);
-  let widget = Gtk.SpinButton.new_with_range(min, max, step);
-  _settings.bind(key, widget, 'value', Gio.SettingsBindFlags.DEFAULT);
-  box.pack_end(widget, false, false, 6);
-  return box;
-}
+let _configs;
 
 function buildPrefsWidget() {
-  let widget = new Gtk.Box({orientation: Gtk.Orientation.VERTICAL});
-  widget.add(switchWidget('show-workspace-numbers', 'Show Workspace Numbers'));
-  widget.add(switchWidget('highlight-current-workspace', 'Highlight Current Workspace'));
-  widget.add(switchWidget('icons-on-right', 'Icons On Right'));
-  widget.add(switchWidget('icons-before-app-menu', 'Icons Before App Menu'));
-  widget.add(spinWidget('inactive-workspace-opacity', 'Inactive Workspace Opacity', 0, 255, 1));
-  widget.show_all();
-  return widget;
+  const main = new Gtk.Box({
+    expand: true,
+    halign: Gtk.Align.CENTER,
+    valign: Gtk.Align.CENTER,
+    margin: 6,
+    spacing: 6,
+    orientation: Gtk.Orientation.VERTICAL
+  });
+  _configs.settings_schema.list_keys().forEach(name => {
+      const key = _configs.settings_schema.get_key(name);
+      const box = new Gtk.Box({hexpand: true});
+      main.add(box);
+      box.pack_start(new Gtk.Label({
+        label:        key.get_summary(),
+        tooltip_text: key.get_description(),
+      }), false, false, 6);
+      const val = new Gtk.Entry({text: _configs.get_value(name).print(false)});
+      const typ = key.get_value_type();
+      val.connect('changed', () => {
+        try {
+          _configs.set_value(name, GLib.Variant.parse(typ, val.text, null, null));
+        } catch (_) {}
+      });
+      box.pack_end(val, false, false, 6);
+      box.pack_end(new Gtk.Label({label: '@' + typ.dup_string()}), false, false, 6);
+    });
+  main.show_all();
+  return main;
+}
+
+function init() {
+  const me = ExtensionUtils.getCurrentExtension();
+  const ss = Gio.SettingsSchemaSource.new_from_directory(
+      me.dir.get_path(), Gio.SettingsSchemaSource.get_default(), false);
+  _configs = new Gio.Settings({
+    settings_schema: ss.lookup(me.metadata['settings-schema'], true)
+  });
 }

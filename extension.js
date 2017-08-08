@@ -1,145 +1,106 @@
-const Meta = imports.gi.Meta;
-const Clutter = imports.gi.Clutter;
-const Gio = imports.gi.Gio;
-const St = imports.gi.St;
-const Shell = imports.gi.Shell;
-const Main = imports.ui.main;
-const Mainloop = imports.mainloop;
+const Gio            = imports.gi.Gio;
+const St             = imports.gi.St;
+const Shell          = imports.gi.Shell;
+const Main           = imports.ui.main;
 const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
 
-let _settings, _iconsBox;
+let _configs;
+let _buttons = [];
 
-function extProperty(object, key, def) {
-  key = '__' + Me.uuid + '_' + key;
-  if (!object[key])
-    object[key] = def();
-  return object[key];
+function filter_unique_apps() {
+  const ids = {};
+  return app => {
+    if (_configs.get_boolean('icons-per-application') && ids[app.id])
+      return false;
+    ids[app.id] = true;
+    return true;
+  };
 }
 
-function extConnect(object, signal, cb) {
-  extProperty(object, 'handles', () => []).push(object.connect(signal, cb));
+function create_indicator_icons(button, windows) {
+  const max = _configs.get_value('icons-maximum-amount').deep_unpack();
+  global.display.sort_windows_by_stacking(windows)
+    .reverse()
+    .map(win => Shell.WindowTracker.get_default().get_window_app(win))
+    .filter(filter_unique_apps())
+    .slice(0, max !== null ? max : undefined)
+    .map(app => app.create_icon_texture(16))
+    .map(tex => new St.Bin({style_class: 'app-menu-icon', child: tex}))
+    .forEach(ico => button.get_child().add_child(ico));
 }
 
-function extDisconnect(object) {
-  extProperty(object, 'handles', () => []).forEach(h => object.disconnect(h));
-}
-
-function getWorkspaces() {
-  let wsList = [];
-  for (let i = 0; i < global.screen.n_workspaces; i++)
-    wsList.push(global.screen.get_workspace_by_index(i));
-  return wsList;
-}
-
-function windowIcon(win) {
-  return extProperty(win, 'icon', () => new St.Bin({
-    style_class: 'taskicons-icon',
-    child: Shell.WindowTracker.get_default().get_window_app(win)
-      .create_icon_texture(16),
-  }));
-}
-
-function workspaceBox(ws) {
-  return extProperty(ws, 'box', () => {
-    let box = new St.BoxLayout({
-      style_class: 'panel-button',
-      reactive: true,
-      can_focus: true,
-      track_hover: true,
-    });
-    box.connect('button-press-event', () =>
-      ws.activate(global.get_current_time()));
-    return box;
-  });
-}
-
-function workspaceLabel(ws) {
-  return extProperty(ws, 'label', () => new St.Label({
-    style_class: 'taskicons-label',
-    y_align: Clutter.ActorAlign.CENTER,
-  }));
-}
-
-function workspaceIcons(ws) {
-  return ws.list_windows().map(windowIcon).filter(icon => icon !== null)
-}
-
-function setupBox(ws, icons, all) {
-  let isActive = ws.index() === global.screen.get_active_workspace_index();
-  let isSingle = all.length === 1;
-  let box = workspaceBox(ws);
-  box.remove_all_children();
-  if (_settings.get_boolean('show-workspace-numbers') && (!isSingle || !isActive)) {
-    let label = workspaceLabel(ws);
-    label.set_text((ws.index() + 1).toString());
-    label.reparent(box);
-  }
-  box.pseudo_class = null;
-  if (_settings.get_boolean('highlight-current-workspace') && (!isSingle && isActive))
-    box.pseudo_class = 'active';
-  icons.forEach(icon => icon.reparent(box));
-  box.set_opacity(isActive ? 255 : _settings.get_double('inactive-workspace-opacity'));
-  return box;
-}
-
-function checkBuild() {
-  let wins = global.get_window_actors()
-    .map(a => a.meta_window)
-    .filter(w => w.window_type === Meta.WindowType.NORMAL);
-  if (wins.length < 1)
-    return false;
-  if (wins.length === 1 && wins[0].get_workspace() == global.screen.get_active_workspace())
-    return false;
-  return true;
-}
-
-function rebuild() {
-  _iconsBox.remove_all_children();
-  if (!checkBuild())
+function create_indicator_label(button, text) {
+  const pos = _configs.get_value('workspace-numbers-position').deep_unpack();
+  if (pos === null)
     return;
-  getWorkspaces()
-    .map(ws => [ws, workspaceIcons(ws)])
-    .filter(([ws, icons]) => icons.length > 0)
-    .forEach(([ws, icons], _, all) => setupBox(ws, icons, all).reparent(_iconsBox));
+  const label = new St.Label({text : text.toString()});
+  button.get_child().insert_child_at_index(label, pos);
 }
 
-function init() {
-  let schema = Me.metadata['settings-schema'];
-  let source = Gio.SettingsSchemaSource.new_from_directory(Me.dir.get_path(),
-    Gio.SettingsSchemaSource.get_default(), false)
-  _settings = new Gio.Settings({
-    settings_schema: source.lookup(schema, true),
-  });
+function create_indicator_style(button, active) {
+  if (!active)
+    return;
+  button.pseudo_class = (button.pseudo_class || '') +
+      ' ' + _configs.get_string('active-workspace-style-pseudo-class');
 }
+
+function create_indicator_button(index) {
+  const active = global.screen.get_active_workspace_index();
+  const poskey = index === active
+                     ? 'active-workspace-position'
+                     : index < active ? 'workspaces-before-active-position'
+                                      : 'workspaces-after-active-position';
+  const pos = _configs.get_value(poskey).deep_unpack();
+  if (pos === null)
+    return;
+  const workspc = global.screen.get_workspace_by_index(index);
+  const windows = workspc.list_windows();
+  if (!windows.length)
+    return;
+  const button = new St.Bin({
+    style_class: 'panel-button',
+    reactive:    true,
+    can_focus:   true,
+    track_hover: true,
+    child:       new St.BoxLayout({style_class : 'panel-status-menu-box'})
+  });
+  _buttons.push(button);
+  button.connect('button-press-event',
+                 () => workspc.activate(global.get_current_time()));
+  create_indicator_icons(button, windows);
+  create_indicator_label(button, index + 1);
+  create_indicator_style(button, index === active);
+  const box = _configs.get_string('panel-box');
+  Main.panel[box].insert_child_at_index(button, pos + index);
+}
+
+function refresh() {
+  _buttons.splice(0).forEach(b => b.destroy());
+  for (let i = 0; i < global.screen.get_n_workspaces(); i++)
+    create_indicator_button(i);
+}
+
+let _handle_sc;
+let _handle_wm;
+let _handle_gs;
 
 function enable() {
-  _iconsBox = new St.BoxLayout({ style_class: 'taskicons-box' });
-  if (_settings.get_boolean('icons-on-right')) {
-    Main.panel._rightBox.insert_child_at_index(_iconsBox, 0);
-  } else {
-    let appMenu = Main.panel.statusArea.appMenu.actor.get_parent();
-    let appMenuBox = appMenu.get_parent();
-    let appMenuIndex = appMenuBox.get_children().indexOf(appMenu);
-    if (!_settings.get_boolean('icons-before-app-menu'))
-      appMenuIndex += 1;
-    appMenuBox.insert_child_at_index(_iconsBox, appMenuIndex);
-  }
-  rebuild();
-  extConnect(global.screen, 'restacked', rebuild);
-  extConnect(global.window_manager, 'switch-workspace', rebuild);
-  extConnect(_settings, 'changed', reenable);
+  _handle_sc = global.screen.connect('restacked', refresh);
+  _handle_wm = global.window_manager.connect('switch-workspace', refresh);
+  _handle_gs = _configs.connect('changed', refresh);
 }
 
 function disable() {
-  extDisconnect(global.screen);
-  extDisconnect(global.window_manager);
-  extDisconnect(_settings);
-  _iconsBox.remove_all_children();
-  _iconsBox.destroy();
+  global.screen.disconnect(_handle_sc);
+  global.window_manager.disconnect(_handle_wm);
+  _configs.disconnect(_handle_gs);
 }
 
-function reenable() {
-  disable();
-  enable();
+function init() {
+  const me = ExtensionUtils.getCurrentExtension();
+  const ss = Gio.SettingsSchemaSource.new_from_directory(
+      me.dir.get_path(), Gio.SettingsSchemaSource.get_default(), false);
+  _configs = new Gio.Settings({
+    settings_schema: ss.lookup(me.metadata['settings-schema'], true)
+  });
 }

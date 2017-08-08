@@ -1,30 +1,80 @@
 <schemalist>
   <schema id="org.gnome.shell.extensions.taskicons" path="/org/gnome/shell/extensions/taskicons/">
-    <key name="show-workspace-numbers" type="b">
+    <key name="panel-box" type="s">
+      <choices>
+        <choice value="_leftBox"/>
+        <choice value="_rightBox"/>
+        <choice value="_centerBox"/>
+      </choices>
+      <aliases>
+        <alias value="left" target="_leftBox"/>
+        <alias value="right" target="_rightBox"/>
+        <alias value="center" target="_centerBox"/>
+      </aliases>
+      <default>'_leftBox'</default>
+      <summary>Panel Box</summary>
+      <description>
+        Which panel box to display the indicators.
+      </description>
+    </key>
+    <key name="workspaces-before-active-position" type="mi">
+      <default>1</default>
+      <summary>Workspaces Before Active Position</summary>
+      <description>
+        Where to show, within the panel box, the indicators for workspaces
+        before the active one.
+        A value of "nothing" hides them.
+      </description>
+    </key>
+    <key name="workspaces-after-active-position" type="mi">
+      <default>1</default>
+      <summary>Workspaces After Active Position</summary>
+      <description>
+        Where to show, within the panel box, the indicators for workspaces
+        after the active one.
+        A value of "nothing" hides them.
+      </description>
+    </key>
+    <key name="active-workspace-position" type="mi">
+      <default>1</default>
+      <summary>Active Workspace Position</summary>
+      <description>
+        Where to show, within the panel box, the indicator for the active
+        workspace.
+        A value of "nothing" hides it.
+      </description>
+    </key>
+    <key name="active-workspace-style-pseudo-class" type="s">
+      <default>'active'</default>
+      <summary>Active Workspace Style Pseudo Class</summary>
+      <description>
+        The CSS style pseudo class to be applied to the active workspace indicator.
+      </description>
+    </key>
+    <key name="icons-maximum-amount" type="mu">
+      <default>nothing</default>
+      <summary>Icons Maximum Amount</summary>
+      <description>
+        The maximum amount of window icons to display within each workspace
+        indicator.
+        A value of "nothing" removes the limit.
+      </description>
+    </key>
+    <key name="icons-per-application" type="b">
       <default>true</default>
-      <summary>Show Workspace Numbers</summary>
-      <description>Whether to display workspace numbers.</description>
+      <summary>Icons Per Application</summary>
+      <description>
+        Whether to group workspace icons by application.
+      </description>
     </key>
-    <key name="highlight-current-workspace" type="b">
-      <default>true</default>
-      <summary>Highlight Current Workspace</summary>
-      <description>Whether to display the current workspace's icon box as a focused panel button.</description>
-    </key>
-    <key name="icons-on-right" type="b">
-      <default>false</default>
-      <summary>Icons on right</summary>
-      <description>Whether to place the icons on the right side of the panel instead of the left.</description>
-    </key>
-    <key name="icons-before-app-menu" type="b">
-      <default>false</default>
-      <summary>Icons Before App Menu</summary>
-      <description>Whether to place the icons before the app menu instead of after.</description>
-    </key>
-    <key name="inactive-workspace-opacity" type="d">
-      <range min="0" max="255"/>
-      <default>255</default>
-      <summary>Inactive Workspace Opacity</summary>
-      <description>The opacity level of inactive workspace icon boxes.</description>
+    <key name="workspace-numbers-position" type="mi">
+      <default>0</default>
+      <summary>Workspace Numbers Position</summary>
+      <description>
+        Whether to display workspace numbers.
+        A negative value appends to the end.
+        A value of "nothing" hides them.
+      </description>
     </key>
   </schema>
 </schemalist>
