@@ -51,6 +51,13 @@
         The CSS style pseudo class to be applied to the active workspace indicator.
       </description>
     </key>
+    <key name="icons-style-class" type="s">
+      <default>'app-menu-icon'</default>
+      <summary>Icons Style Class</summary>
+      <description>
+        The CSS style class to be applied to the icons.
+      </description>
+    </key>
     <key name="icons-maximum-amount" type="mu">
       <default>nothing</default>
       <summary>Icons Maximum Amount</summary>

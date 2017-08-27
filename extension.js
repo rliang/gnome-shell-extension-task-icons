@@ -19,13 +19,14 @@ function filter_unique_apps() {
 
 function create_indicator_icons(button, windows) {
   const max = _configs.get_value('icons-maximum-amount').deep_unpack();
+  const cls = _configs.get_value('icons-style-class').deep_unpack();
   global.display.sort_windows_by_stacking(windows)
     .reverse()
     .map(win => Shell.WindowTracker.get_default().get_window_app(win))
     .filter(filter_unique_apps())
     .slice(0, max !== null ? max : undefined)
     .map(app => app.create_icon_texture(16))
-    .map(tex => new St.Bin({style_class: 'app-menu-icon', child: tex}))
+    .map(tex => new St.Bin({style_class: cls, child: tex}))
     .forEach(ico => button.get_child().add_child(ico));
 }
 
