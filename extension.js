@@ -1,16 +1,21 @@
-const Gio            = imports.gi.Gio;
-const St             = imports.gi.St;
-const Shell          = imports.gi.Shell;
-const Main           = imports.ui.main;
-const ExtensionUtils = imports.misc.extensionUtils;
+const Gio = imports.gi.Gio;
+const St = imports.gi.St;
+const Shell = imports.gi.Shell;
+const Main = imports.ui.main;
+const Me = imports.misc.extensionUtils.getCurrentExtension();
 
-let _configs;
-let _buttons = [];
+const SchemaSource = Gio.SettingsSchemaSource.new_from_directory(
+  Me.dir.get_path(), Gio.SettingsSchemaSource.get_default(), false);
+const settings = new Gio.Settings({
+  settings_schema: SchemaSource.lookup(Me.metadata['settings-schema'], true)
+});
+
+const _buttons = [];
 
 function filter_unique_apps() {
   const ids = {};
   return app => {
-    if (_configs.get_boolean('icons-per-application') && ids[app.id])
+    if (settings.get_boolean('icons-per-application') && ids[app.id])
       return false;
     ids[app.id] = true;
     return true;
@@ -18,8 +23,8 @@ function filter_unique_apps() {
 }
 
 function create_indicator_icons(button, windows) {
-  const max = _configs.get_value('icons-maximum-amount').deep_unpack();
-  const cls = _configs.get_value('icons-style-class').deep_unpack();
+  const max = settings.get_value('icons-maximum-amount').deep_unpack();
+  const cls = settings.get_value('icons-style-class').deep_unpack();
   global.display.sort_windows_by_stacking(windows)
     .reverse()
     .map(win => Shell.WindowTracker.get_default().get_window_app(win))
@@ -31,7 +36,7 @@ function create_indicator_icons(button, windows) {
 }
 
 function create_indicator_label(button, text) {
-  const pos = _configs.get_value('workspace-numbers-position').deep_unpack();
+  const pos = settings.get_value('workspace-numbers-position').deep_unpack();
   if (pos === null)
     return;
   const label = new St.Label({text : text.toString()});
@@ -42,7 +47,7 @@ function create_indicator_style(button, active) {
   if (!active)
     return;
   button.pseudo_class = (button.pseudo_class || '') +
-      ' ' + _configs.get_string('active-workspace-style-pseudo-class');
+      ' ' + settings.get_string('active-workspace-style-pseudo-class');
 }
 
 function create_indicator_button(index) {
@@ -51,7 +56,7 @@ function create_indicator_button(index) {
                      ? 'active-workspace-position'
                      : index < active ? 'workspaces-before-active-position'
                                       : 'workspaces-after-active-position';
-  const pos = _configs.get_value(poskey).deep_unpack();
+  const pos = settings.get_value(poskey).deep_unpack();
   if (pos === null)
     return;
   const workspc = global.screen.get_workspace_by_index(index);
@@ -71,7 +76,7 @@ function create_indicator_button(index) {
   create_indicator_icons(button, windows);
   create_indicator_label(button, index + 1);
   create_indicator_style(button, index === active);
-  const box = _configs.get_string('panel-box');
+  const box = settings.get_string('panel-box');
   Main.panel[box].insert_child_at_index(button, pos + index);
 }
 
@@ -88,20 +93,11 @@ let _handle_gs;
 function enable() {
   _handle_sc = global.screen.connect('restacked', refresh);
   _handle_wm = global.window_manager.connect('switch-workspace', refresh);
-  _handle_gs = _configs.connect('changed', refresh);
+  _handle_gs = settings.connect('changed', refresh);
 }
 
 function disable() {
   global.screen.disconnect(_handle_sc);
   global.window_manager.disconnect(_handle_wm);
-  _configs.disconnect(_handle_gs);
-}
-
-function init() {
-  const me = ExtensionUtils.getCurrentExtension();
-  const ss = Gio.SettingsSchemaSource.new_from_directory(
-      me.dir.get_path(), Gio.SettingsSchemaSource.get_default(), false);
-  _configs = new Gio.Settings({
-    settings_schema: ss.lookup(me.metadata['settings-schema'], true)
-  });
+  settings.disconnect(_handle_gs);
 }
