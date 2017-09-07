@@ -58,6 +58,13 @@
         The CSS style class to be applied to the icons.
       </description>
     </key>
+    <key name="icons-style" type="s">
+      <default>''</default>
+      <summary>Icons Style</summary>
+      <description>
+        The CSS style to be applied to the icons.
+      </description>
+    </key>
     <key name="icons-maximum-amount" type="mu">
       <default>nothing</default>
       <summary>Icons Maximum Amount</summary>
