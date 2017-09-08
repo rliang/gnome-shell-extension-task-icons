@@ -98,6 +98,7 @@ function enable() {
 }
 
 function disable() {
+  _buttons.splice(0).forEach(b => b.destroy());
   global.screen.disconnect(_handle_sc);
   global.window_manager.disconnect(_handle_wm);
   settings.disconnect(_handle_gs);
