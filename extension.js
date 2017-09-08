@@ -9,6 +9,9 @@ const SchemaSource = Gio.SettingsSchemaSource.new_from_directory(
 const settings = new Gio.Settings({
   settings_schema: SchemaSource.lookup(Me.metadata['settings-schema'], true)
 });
+const gwmprefs = new Gio.Settings({
+  schema: 'org.gnome.desktop.wm.preferences'
+});
 
 const _buttons = [];
 
@@ -36,12 +39,14 @@ function create_indicator_icons(button, windows) {
     .forEach(ico => button.get_child().add_child(ico));
 }
 
-function create_indicator_label(button, text) {
-  const pos = settings.get_value('workspace-numbers-position').deep_unpack();
+function create_indicator_label(button, index) {
+  const pos = settings.get_value('workspace-labels-position').deep_unpack();
   if (pos === null)
     return;
-  const label = new St.Label({text : text.toString()});
-  button.get_child().insert_child_at_index(label, pos);
+  const usename = settings.get_boolean('workspace-names-as-labels');
+  const names = gwmprefs.get_strv('workspace-names');
+  const txt = usename ? names[index] || '' : (index + 1).toString();
+  button.get_child().insert_child_at_index(new St.Label({text: txt}), pos);
 }
 
 function create_indicator_style(button, active) {
@@ -75,7 +80,7 @@ function create_indicator_button(index) {
   button.connect('button-press-event',
                  () => workspc.activate(global.get_current_time()));
   create_indicator_icons(button, windows);
-  create_indicator_label(button, index + 1);
+  create_indicator_label(button, index);
   create_indicator_style(button, index === active);
   const box = settings.get_string('panel-box');
   Main.panel[box].insert_child_at_index(button, pos + index);
@@ -90,11 +95,13 @@ function refresh() {
 let _handle_sc;
 let _handle_wm;
 let _handle_gs;
+let _handle_gw;
 
 function enable() {
   _handle_sc = global.screen.connect('restacked', refresh);
   _handle_wm = global.window_manager.connect('switch-workspace', refresh);
   _handle_gs = settings.connect('changed', refresh);
+  _handle_gw = gwmprefs.connect('changed', refresh);
 }
 
 function disable() {
@@ -102,4 +109,5 @@ function disable() {
   global.screen.disconnect(_handle_sc);
   global.window_manager.disconnect(_handle_wm);
   settings.disconnect(_handle_gs);
+  gwmprefs.disconnect(_handle_gw);
 }

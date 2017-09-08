@@ -81,11 +81,19 @@
         Whether to group workspace icons by application.
       </description>
     </key>
-    <key name="workspace-numbers-position" type="mi">
-      <default>0</default>
-      <summary>Workspace Numbers Position</summary>
+    <key name="workspace-names-as-labels" type="b">
+      <default>false</default>
+      <summary>Workspace Names As Labels</summary>
       <description>
-        Whether to display workspace numbers.
+        Whether to use workspace names, instead of numbers, as labels.
+        Names are set in "/org/gnome/desktop/wm/preferences/workspace-names".
+      </description>
+    </key>
+    <key name="workspace-labels-position" type="mi">
+      <default>0</default>
+      <summary>Workspace Labels Position</summary>
+      <description>
+        Whether to display workspace labels.
         A negative value appends to the end.
         A value of "nothing" hides them.
       </description>
