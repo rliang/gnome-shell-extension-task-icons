@@ -57,7 +57,7 @@ function create_indicator_style(button, active) {
 }
 
 function create_indicator_button(index) {
-  const active = global.screen.get_active_workspace_index();
+  const active = global.workspace_manager.get_active_workspace_index();
   const poskey = index === active
                      ? 'active-workspace-position'
                      : index < active ? 'workspaces-before-active-position'
@@ -65,7 +65,7 @@ function create_indicator_button(index) {
   const pos = settings.get_value(poskey).deep_unpack();
   if (pos === null)
     return;
-  const workspc = global.screen.get_workspace_by_index(index);
+  const workspc = global.workspace_manager.get_workspace_by_index(index);
   const windows = workspc.list_windows();
   if (!windows.length)
     return;
@@ -88,7 +88,7 @@ function create_indicator_button(index) {
 
 function refresh() {
   _buttons.splice(0).forEach(b => b.destroy());
-  for (let i = 0; i < global.screen.get_n_workspaces(); i++)
+  for (let i = 0; i < global.workspace_manager.get_n_workspaces(); i++)
     create_indicator_button(i);
 }
 
@@ -98,7 +98,7 @@ let _handle_gs;
 let _handle_gw;
 
 function enable() {
-  _handle_sc = global.screen.connect('restacked', refresh);
+  _handle_sc = global.display.connect('restacked', refresh);
   _handle_wm = global.window_manager.connect('switch-workspace', refresh);
   _handle_gs = settings.connect('changed', refresh);
   _handle_gw = gwmprefs.connect('changed', refresh);
@@ -106,7 +106,7 @@ function enable() {
 
 function disable() {
   _buttons.splice(0).forEach(b => b.destroy());
-  global.screen.disconnect(_handle_sc);
+  global.display.disconnect(_handle_sc);
   global.window_manager.disconnect(_handle_wm);
   settings.disconnect(_handle_gs);
   gwmprefs.disconnect(_handle_gw);
